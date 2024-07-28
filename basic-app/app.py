@@ -52,3 +52,89 @@ with ui.layout_columns(fill=False):
                 bill = d.total_bill.mean()
                 f"${bill:.2f}"
 
+
+with ui.layout_columns(col_widths=[6, 6, 12]):
+
+    with ui.card(full_screen=True):
+        ui.card_header("Tips data")
+        @render.data_frame
+        def table():
+            return render.DataGrid(tips_data())
+
+    with ui.card(full_screen=True):
+        with ui.card_header(class_="d-flex justify-content-between align-items-center"):
+            "Total bill vs tip"
+            with ui.popover(title="Add a color variable", placement="top"):
+                ICONS["gear"]
+                ui.input_radio_buttons(
+                    "scatter_color", None,
+                    ["none", "sex", "smoker", "day", "time"],
+                    inline=True
+                )
+
+        @render_plotly
+        def scatterplot():
+            color = input.scatter_color()
+            return px.scatter(
+                tips_data(),
+                x="total_bill",
+                y="tip",
+                color=None if color == "none" else color,
+                trendline="lowess"
+            )
+
+    with ui.card(full_screen=True):
+        with ui.card_header(class_="d-flex justify-content-between align-items-center"):
+            "Tip percentages"
+            with ui.popover(title="Add a color variable"):
+                ICONS["gear"]
+                ui.input_radio_buttons(
+                    "tip_perc_y", "Split by:",
+                    ["sex", "smoker", "day", "time"],
+                    selected="day",
+                    inline=True
+                )
+
+        @render_plotly
+        def tip_perc():
+            from ridgeplot import ridgeplot
+            # Must make a copy of this pandas dataframe before we mutate it!
+            # See https://shiny.posit.co/py/docs/reactive-mutable.html
+            dat = tips_data().copy()
+            dat["percent"] = dat.tip / dat.total_bill
+            yvar = input.tip_perc_y()
+            uvals = dat[yvar].unique()
+
+            samples = [
+                [ dat.percent[dat[yvar] == val] ]
+                for val in uvals
+            ]
+
+            plt = ridgeplot(
+                samples=samples, labels=uvals, bandwidth=0.01,
+                colorscale="viridis", colormode="row-index"
+            )
+
+            plt.update_layout(
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5)
+            )
+
+            return plt
+
+
+# --------------------------------------------------------
+# Reactive calculations and effects
+# --------------------------------------------------------
+
+@reactive.calc
+def tips_data():
+    bill = input.total_bill()
+    idx1 = tips.total_bill.between(bill[0], bill[1])
+    idx2 = tips.time.isin(input.time())
+    return tips[idx1 & idx2]
+
+@reactive.effect
+@reactive.event(input.reset)
+def _():
+    ui.update_slider("total_bill", value=bill_rng)
+    ui.update_checkbox_group("time", selected=["Lunch", "Dinner"])
