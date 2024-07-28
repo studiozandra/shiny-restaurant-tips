@@ -23,3 +23,32 @@ ICONS = {
     "currency-dollar": fa.icon_svg("dollar-sign"),
     "gear": fa.icon_svg("gear")
 }
+
+
+
+with ui.layout_columns(fill=False):
+
+    with ui.value_box(showcase=ICONS["user"]):
+        "Total tippers"
+        @render.express
+        def total_tippers():
+            tips_data().shape[0]
+
+    with ui.value_box(showcase=ICONS["wallet"]):
+        "Average tip"
+        @render.express
+        def average_tip():
+            d = tips_data()
+            if d.shape[0] > 0:
+                perc = d.tip / d.total_bill
+                f"{perc.mean():.1%}"
+
+    with ui.value_box(showcase=ICONS["currency-dollar"]):
+        "Average bill"
+        @render.express
+        def average_bill():
+            d = tips_data()
+            if d.shape[0] > 0:
+                bill = d.total_bill.mean()
+                f"${bill:.2f}"
+
