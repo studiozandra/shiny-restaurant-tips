@@ -1,7 +1,7 @@
 # shiny-restaurant-tips
 Boilerplate Shiny data visualization app
 
-![shiny screencap](shinyapp\screencapture.png "Shiny boilerplate")
+![shiny screencap](screencapture.png "Shiny boilerplate")
 
 Follow the official [documentation installation steps](https://shiny.posit.co/py/docs/install-create-run.html#install) under "Install".
 
